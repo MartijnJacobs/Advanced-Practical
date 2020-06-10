@@ -20,11 +20,11 @@ def procIC(Pat, IC):
         -how many days since entrance
     """
     if type(Pat.ic) == int and Pat.ic >= 0:
-        print(Pat.ic)
+        print("   ", Pat.ic)
         Pat.ic += 1
     if type(Pat.ic) == bool and Pat.ic == False:
         if hospEntry(Pat, IC):
-            print("Made it to the IC man")
+            print("    Made it to the IC man")
             Pat.ic= 1
             IC.tot += 1
             if Pat.cor:
@@ -33,7 +33,7 @@ def procIC(Pat, IC):
                 IC.othPat += 1
             return True
         else:
-            print("This is a dead man")
+            print("    This is a dead man")
             return False
 
 class Patient:
@@ -54,18 +54,19 @@ class IC:
         self.order = order #Int
         
     def prIC(self):
-        print("Cap:", self.cap, "Tot:", self.tot, "Cor:", self.corPat, "Oth:", self.othPat)
+        print("    Cap:", self.cap, "Tot:", self.tot, "Cor:", self.corPat, "Oth:", self.othPat)
         
     def orderBeds(self, iDay):
         if (self.cap + self.order - self.tot) <= 5:
             self.order += 5
-        print("Day", iDay + 1, ", Order is", self.order)
+        print("    Order is", self.order)
         if iDay == 6:
-            print("Order", self.order, "beds")
+            print("    Weekorder", self.order, "beds")
             self.order = 0
         
 def procDay(IC, vP, vN, iDay):
     """Processes a day with new patients entering"""
+    print("Day", iDay + 1)
     IC.prIC()
     for i in vP:
         procIC(i, IC)
@@ -74,6 +75,7 @@ def procDay(IC, vP, vN, iDay):
             vP.append(i)
     IC.prIC()
     IC.orderBeds(iDay)
+    print(" ")
     return vP
 
 def procWeek(IC, vE, vN):
