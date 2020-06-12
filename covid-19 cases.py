@@ -76,11 +76,11 @@ def main():
     iDays = 150 
     iDaysLog = 100
     dP = 0.003 #percentage of IC from total people infected
-    dCompare = 0.05
+    dCompare = 0.05 #percentage of infected people that have also been tested
     
-    dLambda = 0.167
-    dGammaMild = 0.125
-    dGammaHard = 0.0556
+    dLambda = 0.167 #incubatietijd van coronavirus 1/days
+    dGammaMild = 0.125 #duur van herstel voor milde gevallen 1/days
+    dGammaHard = 0.0556 #duur van herstel voor zware gevallen 1/days
     
     #SEIRS Model
     vS = np.empty(iDays)
@@ -95,13 +95,14 @@ def main():
     vE[0] = 1
     
     for i in range(len(vS)-1):
-        vS[i+1] = vS[i] + (-dBeta * vI[i] * vS[i])/iN2
-        vE[i+1] = vE[i] + ( dBeta * vI[i] * vS[i])/iN2 - dLambda * vE[i]
-        vI[i+1] = vI[i] + dLambda * vE[i] - dP * dGammaHard * vI[i] - (1-dP) * dGammaMild * vI[i]
-        vdI[i+1] = dLambda * vE[i]
-        vHos[i+1] = dP * vdI[i+1]
-        vHosCum[i+1] = vHosCum[i] + dP * vdI[i+1]
-        vCompare[i+1] = dCompare * vdI[i+1]
+        vS[i+1] = vS[i] + (-dBeta * vI[i] * vS[i])/iN2 #hoeveelheid mensen die besmet kunnen raken
+        vE[i+1] = vE[i] + ( dBeta * vI[i] * vS[i])/iN2 - dLambda * vE[i] #hoeveelheid mensen die zijn besmet maar nog niet ziek
+        vI[i+1] = vI[i] + dLambda * vE[i] - dP * dGammaHard * vI[i] - (1-dP) * dGammaMild * vI[i] #hoeveelheid zieke mensen
+        
+        vdI[i+1] = dLambda * vE[i] #dagelijkse nieuwe hoeveelheid geinfecteerde mensen
+        vHos[i+1] = dP * vdI[i+1] #percentage van alle covid gevallen die in het ziekenhuis zijn beland
+        vHosCum[i+1] = vHosCum[i] + dP * vdI[i+1] #zelfe maar dan cumulatief
+        vCompare[i+1] = dCompare * vdI[i+1] #hoeveelheid van alle gevallen die zijn getest
              
     vHos[0] = 0
     
@@ -110,28 +111,35 @@ def main():
     vHosCumAlter = vHosCum[45:150] 
     
     #Estimated lognormal 
-    (dMu, dSigma) = LogNormalMLE(vICToename)
+    #(dMu, dSigma) = LogNormalMLE(vICToename) #deze waarden lijken niet te kloppen
     vLogNormal = LogNormalPDF(3.5,3,iDaysLog)
     
+    #plots
     plt.plot(vHosAlter)
     plt.plot(vICToename)
+    plt.title("hoeveelheid opgenome mensen per dag op IC met benadering met SEIR model")
     plt.show()
+    
     plt.plot(vHosCumAlter)
     plt.plot(vICCum)
+    plt.title("totale hoeveelheid opgenome mensen op IC met benadering met SEIR model")
     plt.show()
     
-    
+
     plt.plot(25000 * vLogNormal)
     plt.plot(vICToename)
+    plt.title("Benadering IC opnames met Lognormale verdeling met mu = 3.5 en sigma = 3")
     plt.show()
     
     #Estimated average stay on IC
     vGamma = GammaPDF(19, 1, 40)
     plt.plot(vGamma)
+    plt.title("verblijfsduur IC met gemiddelde van 18")
     plt.show()
     
     vGamma2 = GammaPDF(8, 1, 40)
     plt.plot(vGamma2)
+    plt.title("verblijfsduur IC met gemiddelde van 7")
     plt.show()
     
     
