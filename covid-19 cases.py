@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from scipy.special import gamma
+import numpy.random as rnd
 
 
 def LogNormalMLE(vX):
@@ -44,7 +45,9 @@ def GammaPDF(dAlpha, dBeta, iN):
     for i in range(iN):
         vGamma[i] = dBeta**dAlpha * i **(dAlpha-1) * np.exp(-dBeta*i) / gamma(dAlpha)
     return vGamma
-       
+
+def ExpRANDOM(dRate):
+    return -np.log(rnd.rand())/dRate     
 
 def main(): 
     #initialization
@@ -113,6 +116,7 @@ def main():
     #Estimated lognormal 
     #(dMu, dSigma) = LogNormalMLE(vICToename) #deze waarden lijken niet te kloppen
     vLogNormal = LogNormalPDF(3.5,3,iDaysLog)
+    vICDist = 25000 * vLogNormal
     
     #plots
     plt.plot(vHosAlter)
@@ -126,7 +130,7 @@ def main():
     plt.show()
     
 
-    plt.plot(25000 * vLogNormal)
+    plt.plot(vICDist)
     plt.plot(vICToename)
     plt.title("Benadering IC opnames met Lognormale verdeling met mu = 3.5 en sigma = 3")
     plt.show()
@@ -141,6 +145,36 @@ def main():
     plt.plot(vGamma2)
     plt.title("verblijfsduur IC met gemiddelde van 7")
     plt.show()
+    
+    #draw random number
+    dTime = 0
+    iDay = 0
+    vPatients = np.zeros(100)
+    while iDay != 99:
+        if dTime < 1440:
+            dRandom = ExpRANDOM(vICDist[iDay]/1440)
+            if dRandom < 1440:
+                dTime += dRandom
+                vPatients[iDay] += 1
+            else:
+                dTime = 0
+                iDay +=1
+                
+        else:
+            dTime = dTime-1440
+            iDay +=1
+            dRandom = ExpRANDOM(vICDist[iDay]/1440)
+            dTime += dRandom
+            vPatients[iDay] += 1
+        
+        print(dTime)
+        
+    print(iDay)
+    print(vPatients)
+    plt.plot(vPatients)
+    plt.plot(vICToename)
+    plt.show()
+    
     
     
 
