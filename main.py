@@ -10,13 +10,13 @@ class Person:
         self.age = age #Int
         self.oth = oth #Bool
         self.cor = cor #Bool
-        self.time = time #Int, time of arrival on certain day
+        self.time = time #Float, time of arrival on certain day
         
 class Patient:
     
     def __init__(self, life, time, day, ic):
         self.life = life #Bool, die or survive
-        self.time = time #Int
+        self.time = time #Float
         self.day = day #Int
         self.ic = ic #Int
         
@@ -25,7 +25,7 @@ class Event:
     def __init__(self, typ, pat):
         self.typ = typ #Bool, arr or dep
         self.pat = pat #Patient or Person
-        self.time = self.pat.time #Int
+        self.time = self.pat.time #Float
         
 class Elist:
     
@@ -98,7 +98,7 @@ def procIC(elist, IC, iDay):
         else:
             IC.othPat[i].day += 1
 
-def procDep(pat, iT):
+def procDep(pat):
     """Processes the departure of a patient"""
     sL = "alive"
     sD = "dead"
@@ -107,7 +107,7 @@ def procDep(pat, iT):
         sP = sL
     else:
         sP = sD
-    print("At", iT, "hours today, a patient left the IC", sP)    
+    print("At", pat.time, "hours today, a patient left the IC", sP)    
             
 def procDay(elist, IC, iM, iDay):
     """Processes a full day on the IC:
@@ -117,26 +117,25 @@ def procDay(elist, IC, iM, iDay):
         """
     iCap = IC.tot
     procIC(elist, IC, iDay)
-    for i in range(iM):
+    for i in range(len(elist.elist)):
         if len(elist.elist) > 0:
-            if elist.elist[0].time == i:
-                eN = elist.getFirstEvent()
-                if not eN.typ:
-                    iCap += 1
-                    procDep(eN.pat, i)
-                else:
-                    if checkArr(eN.pat, IC, iCap):
-                        iCap -= 1
-                        pA = Patient(True, i, 3, 0) #Generate time in system
-                        if eN.pat.cor:
-                            IC.corPat.append(pA)
-                        else:
-                            IC.othPat.append(pA)
-                        procArr(eN.pat, i, True)
+            eN = elist.getFirstEvent()
+            if not eN.typ:
+                iCap += 1
+                procDep(eN.pat)
+            else:
+                if checkArr(eN.pat, IC, iCap):
+                    iCap -= 1
+                    pA = Patient(True, i, 3, 0) #Generate time in system
+                    if eN.pat.cor:
+                        IC.corPat.append(pA)
                     else:
-                        procArr(eN.pat, i, False)
+                        IC.othPat.append(pA)
+                    procArr(eN.pat, True)
+                else:
+                    procArr(eN.pat, False)
                 
-def procArr(per, i, bol):
+def procArr(per, bol):
     """Processes the arrival of a person"""
     sC = "corona"
     sO = "something unspecified"
@@ -146,9 +145,9 @@ def procArr(per, i, bol):
     else:
         sP = sO
     if bol:
-        print("At", i, "hours today, a patient entered the IC with", sP)
+        print("At", per.time, "hours today, a patient entered the IC with", sP)
     else:
-        print("At", i, "hours today, a person with", sP, "was rejected from the IC")
+        print("At", per.time, "hours today, a person with", sP, "was rejected from the IC")
             
 ### main
 def main(): 
