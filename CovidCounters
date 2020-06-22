@@ -203,8 +203,8 @@ def simRun(vLambda, iBeds, vPatients, vDeaths, vRej, vRD):
                 iRD += r
         else:
             r, age = procDep(vAgeGroups)
-            iDeaths += r
             if r == 1:
+                iDeaths += 1
                 vAgeD.append(age)
             iPatients -= 1 
            
@@ -220,25 +220,24 @@ def Simulations(iN, iDays, dP, dLambda, dGammaMild, dGammaHard, iBeds, iSimRuns)
     
     vPatientsCum = np.zeros(101)
     vDeathsCum = np.zeros(101)
-    vRej = np.zeros(101)
-    vRD = np.zeros(101)
+    vRejCum = np.zeros(101)
+    vRDCum = np.zeros(101)
     vAgeGroupsCum = [] 
     vAgeDCum = []
     for i in range(iSimRuns):
         vLambda = seir.SEIRmodel(iN, iDays, dP, dLambda, dGammaMild, dGammaHard)
-        (vPatients, vDeaths, vAgeGroups, vRej, vRD, vAgeD) = simRun(vLambda, iBeds, np.zeros(101), np.zeros(101), vRej, vRD)
-        
+        (vPatients, vDeaths, vAgeGroups, vRej, vRD, vAgeD) = simRun(vLambda, iBeds, np.zeros(101), np.zeros(101), np.zeros(101), np.zeros(101))
+        vRejCum += vRej
+        vRDCum += vRD
         vPatientsCum += vPatients
-        #print(vPatientsCum)
-        #print(vPatients)
         vDeathsCum += vDeaths
         vAgeGroupsCum.extend(vAgeGroups)
         vAgeDCum.extend(vAgeD)
         
     vPatients = vPatientsCum / iSimRuns
     vDeaths = vDeathsCum / iSimRuns
-    vRej = vRej / iSimRuns
-    vRD = vRD / iSimRuns
+    vRej = vRejCum / iSimRuns
+    vRD = vRDCum / iSimRuns
     return (vPatients, vDeaths, vRej, vAgeGroups, vRD, vAgeD)    
     
 def barToLine(vA):
@@ -270,7 +269,7 @@ def main():
     vICdata = dfICdata.values
     
     iSimRuns = 1
-    iBeds = 1210
+    iBeds = 1410
     vPatients = np.zeros(101)
     
     iN = 17414806 #population
@@ -295,15 +294,14 @@ def main():
     
     print(str(int(vRej[100])) + " people were rejected, of which " + str(int(vRD[100])) + " people died.")
     print(str(len(vAgeGroups)) + " people left the IC, of which " + str(len(vAgeD)) + " dead.") 
-    print("Which comes down to a total deathcount of " + str(int(vDeaths[100])) + ".")
-    
+    print("Which comes down to a total deathcount of " + str(int(vRD[100]) + len(vAgeD)) + ".")
+    print(int(vDeaths[100]))
     plt.hist(vAgeGroups, bins=15, label='Patients')
     plt.hist(vAgeD, bins=15, label='Deaths')
     plt.title('Patients & Deaths per age group')
     ax = plt.subplot(111)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.show()
-    
     vOcc = occupy(iBeds, vPatients)
     plt.plot(vOcc)
     plt.title('Percentage of beds being occupied')
