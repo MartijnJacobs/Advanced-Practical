@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jun 21 00:11:19 2020
+
+@author: ehess
+"""
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ###########################################################
@@ -8,7 +15,7 @@ import numpy.random as rnd
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import stats
-import seir
+#import seir
 
 ###########################################################
 class Person:
@@ -21,7 +28,7 @@ class Patient:
     
     def __init__(self, agegroup):
         self.agegroup = agegroup
-        
+    
     def getAgeGroup(self):
         return self.agegroup
     
@@ -33,80 +40,88 @@ class Patient:
             if np.random.rand() > 0:
                 return True
         elif self.agegroup == 3:
-            if np.random.rand() > 0.154:
+            if np.random.rand() > 0.1176:
                 return True
             else:
                 return False
         elif self.agegroup == 4:
-            if np.random.rand() > 0.111:
+            if np.random.rand() > 0.0857:
                 return True
             else:
                 return False
         elif self.agegroup == 5:
-            if np.random.rand() > 0.1667:
+            if np.random.rand() > 0.15:
                 return True
             else:
                 return False
         elif self.agegroup == 6:
-            if np.random.rand() > 0.0612:
+            if np.random.rand() > 0.0741:
                 return True
             else:
                 return False
         elif self.agegroup == 7:
-            if np.random.rand() > 0.141:
+            if np.random.rand() > 0.125:
                 return True
             else:
                 return False
         elif self.agegroup == 8:
-            if np.random.rand() > 0.112:
+            if np.random.rand() > 0.0916:
                 return True
             else:
                 return False
         elif self.agegroup == 9:
-            if np.random.rand() > 0.2396:
+            if np.random.rand() > 0.206:
                 return True
             else:
                 return False
         elif self.agegroup == 10:
-            if np.random.rand() > 0.2667:
+            if np.random.rand() > 0.226:
                 return True
             else:
                 return False
         elif self.agegroup == 11:
-            if np.random.rand() > 0.3996:
+            if np.random.rand() > 0.3666:
                 return True
             else:
                 return False
         elif self.agegroup == 12:
-            if np.random.rand() > 0.4654:
+            if np.random.rand() > 0.4148:
                 return True
             else:
                 return False
         elif self.agegroup == 13:
-            if np.random.rand() > 0.5855:
+            if np.random.rand() > 0.5292:
                 return True
             else:
                 return False
         elif self.agegroup == 14:
-            if np.random.rand() > 0.7241:
+            if np.random.rand() > 0.6774:
                 return True
             else:
                 return False
         elif self.agegroup == 15:
-            if np.random.rand() > 0.6923:
+            if np.random.rand() > 0.6:
                 return True
             else:
                 return False
         
 class Event:
-    def __init__(self, time = 0, typ = ''):
-        self.info = (time, typ) #Bool, arr or dep
+    def __init__(self, time = 0, typ = '', agegroup = 0, survival=True):
+        self.info = (time, typ, agegroup, survival) #Bool, arr or dep
         
     def getTime (self):
         return self.info[0]
 
     def getType( self ):
         return self.info[1]
+    
+    def getAgeGroup(self):
+        return self.info[2]
+    
+    def getSurvival(self):
+        return self.info[3]
+    
+
         
 class Elist:
     
@@ -146,19 +161,32 @@ def procArr(dLambda, iBeds, L, dTime, iPatients):
     L.addE(eva)
         
     if iPatients < iBeds: #check if there is space on intensive care
-        dStay = np.random.lognormal(2.7, 0.8) #if so, then determine how long the patient will stay
-        evb = Event(dTime + dStay, 'dep') #create a new event
+        pat = Patient(returnAge())
+        age = pat.getAgeGroup()
+        bSur = pat.Survival()
+        #print(bSur)
+        if bSur == True:
+            #dStay = ExpRANDOM(1/19.59)
+            #dStay = ExpRANDOM(1/22.5)
+            dStay = np.random.lognormal(2.9, 0.7)
+        else:
+            dStay = ExpRANDOM(1/13.96)
+            #dStay = ExpRANDOM(1/21.2)
+            #dStay = np.random.lognormal(2.3, 0.7)
+        #dStay = np.random.lognormal(2.7, 0.8) #if so, then determine how long the patient will stay
+        evb = Event(dTime + dStay, 'dep', age, bSur) #create a new event
         L.addE(evb) #and add it to the event list
         return 1
     else:
         return 0    
         
-def procDep(vAgeGroups):
+def procDep(vAgeGroups, Event):
     """Processes the departure of a patient"""
-    pat = Patient(returnAge())
-    age = pat.getAgeGroup()
+    #pat = Patient(returnAge())
+    age = Event.getAgeGroup()
+    bSur = Event.getSurvival()
     vAgeGroups = vAgeGroups.append(age)
-    bSur = pat.Survival()
+    #bSur = pat.Survival()
     if not bSur:
         return 1, age
     else:
@@ -177,7 +205,7 @@ def simRun(vLambda, iBeds, vPatients, vDeaths, vRej, vRD):
     vAgeGroups = []
     vAgeD = []
     L = Elist()
-    evt = Event(ExpRANDOM(vLambda[0]), 'arr') # first arrival is someone with corona
+    evt = Event(ExpRANDOM(vLambda[0]), 'arr', 0, True) # first arrival is someone with corona
     L.addE(evt)
     
     """Here the simulation is run for 100 days, so dTime gets added up until it is equal to 99"""
@@ -202,9 +230,9 @@ def simRun(vLambda, iBeds, vPatients, vDeaths, vRej, vRD):
                 iDeaths += r
                 iRD += r
         else:
-            r, age = procDep(vAgeGroups)
+            r, age = procDep(vAgeGroups, evt)
+            iDeaths += r
             if r == 1:
-                iDeaths += 1
                 vAgeD.append(age)
             iPatients -= 1 
            
@@ -225,7 +253,7 @@ def Simulations(iN, iDays, dP, dLambda, dGammaMild, dGammaHard, iBeds, iSimRuns)
     vAgeGroupsCum = [] 
     vAgeDCum = []
     for i in range(iSimRuns):
-        vLambda = seir.SEIRmodel(iN, iDays, dP, dLambda, dGammaMild, dGammaHard)
+        vLambda = SEIRmodel(iN, iDays, dP, dLambda, dGammaMild, dGammaHard)
         (vPatients, vDeaths, vAgeGroups, vRej, vRD, vAgeD) = simRun(vLambda, iBeds, np.zeros(101), np.zeros(101), np.zeros(101), np.zeros(101))
         vRejCum += vRej
         vRDCum += vRD
@@ -233,12 +261,12 @@ def Simulations(iN, iDays, dP, dLambda, dGammaMild, dGammaHard, iBeds, iSimRuns)
         vDeathsCum += vDeaths
         vAgeGroupsCum.extend(vAgeGroups)
         vAgeDCum.extend(vAgeD)
-        
+    print(len(vAgeDCum)/iSimRuns)   
     vPatients = vPatientsCum / iSimRuns
     vDeaths = vDeathsCum / iSimRuns
     vRej = vRejCum / iSimRuns
     vRD = vRDCum / iSimRuns
-    return (vPatients, vDeaths, vRej, vAgeGroups, vRD, vAgeD)    
+    return (vPatients, vDeaths, vRej, vAgeGroupsCum, vRD, vAgeDCum)    
     
 def barToLine(vA):
     vB = np.zeros(max(vA))
@@ -258,18 +286,21 @@ def occupy(iBeds, vPatients):
         vA[i] = vPatients[i] / iBeds
     return vA
 
-def printMortality(vA, vB):
+def printMortality(vA, vB, iSimRuns):
+    pC = 0
     for i in range(len(vA)):
-        print(str(round(100*vA[i], 3)) + "% of age group", i + 1, "died, based on", int(vB[i]), "patients.")
-    
+        print(str(round(100*vA[i], 3)) + "% of age group", i + 1, "died, based on", int(vB[i]/iSimRuns), "patients.")
+        pC += int(vB[i]/iSimRuns)
+    print(pC)
+      
 def main(): 
     url2 = 'https://raw.githubusercontent.com/J535D165/CoronaWatchNL/master/data-ic/data-nice/NICE_IC_wide_latest.csv'
     df2 = pd.read_csv(url2, error_bad_lines=False)
     dfICdata = df2.loc[:, "TotaalOpnamen"]
     vICdata = dfICdata.values
     
-    iSimRuns = 1
-    iBeds = 1410
+    iSimRuns = 5
+    iBeds = 1150
     vPatients = np.zeros(101)
     
     iN = 17414806 #population
@@ -282,36 +313,67 @@ def main():
     dGammaHard = 0.0556 #duur van herstel voor zware gevallen 1/days
     
     (vPatients, vDeaths, vRej, vAgeGroups, vRD, vAgeD) = Simulations(iN, iDays, dP, dLambda, dGammaMild, dGammaHard, iBeds, iSimRuns)
+    
     plt.plot(vPatients, label='Simulated patients') #our simulation
     plt.plot(vICdata, label='Given data') #real data
     plt.plot(vDeaths, label='Deaths')
     plt.plot(vRej, label='Rejected patients')
     plt.hlines(iBeds, 0, 100, label='Beds')
+    #plt.hlines(900, 0, 100, label='Reference', linestyle=':')
     plt.title('Number of patients over time')
     ax = plt.subplot(111)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.show()
     
     print(str(int(vRej[100])) + " people were rejected, of which " + str(int(vRD[100])) + " people died.")
-    print(str(len(vAgeGroups)) + " people left the IC, of which " + str(len(vAgeD)) + " dead.") 
-    print("Which comes down to a total deathcount of " + str(int(vRD[100]) + len(vAgeD)) + ".")
-    print(int(vDeaths[100]))
-    plt.hist(vAgeGroups, bins=15, label='Patients')
-    plt.hist(vAgeD, bins=15, label='Deaths')
-    plt.title('Patients & Deaths per age group')
-    ax = plt.subplot(111)
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    print(str(int(len(vAgeGroups)/iSimRuns)) + " people left the IC, of which " + str(int(len(vAgeD)/iSimRuns)) + " dead.") 
+    print("Which comes down to a total deathcount of " + str(int(vDeaths[100])) + ".")
+    fig, ax1 = plt.subplots()
+    ax1.hist(vAgeGroups, bins=15, label='Patients')
+    ax1.hist(vAgeD, bins=15, label='Deaths')    
+    y_vals = ax1.get_yticks()
+    ax1.set_yticklabels(['{:3.0f}'.format(x / iSimRuns) for x in y_vals])
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.show()
-    vOcc = occupy(iBeds, vPatients)
-    plt.plot(vOcc)
-    plt.title('Percentage of beds being occupied')
-    plt.show()
+    
+    #vOcc = occupy(iBeds, vPatients)
+    #plt.plot(vOcc)
+    #plt.title('Percentage of beds being occupied')
+    #plt.show()
     
     vBarsDep = barToLine(vAgeGroups)
     vBarsDea = barToLine(vAgeD)
     vMort = calcMortality(vBarsDea, vBarsDep)
-    printMortality(vMort, vBarsDep)
+    printMortality(vMort, vBarsDep, iSimRuns)
+
+def SEIRmodel(iN, iDays, dP, dLambda, dGammaMild, dGammaHard):
     
+    #SEIRS Model
+    vS = np.empty(iDays)
+    vI = np.empty(iDays)
+    vE = np.empty(iDays)
+    vHos = np.empty(iDays)
+    vdI = np.empty(iDays)
+    vS[0] = iN
+    vI[0] = 6
+    vE[0] = 1
+    
+    fBeta = lambda x: 2.5 - 0.055 * x if (2.5 - 0.055 * x>0.4) else 0.25
+    
+    for i in range(len(vS)-1):
+        vS[i+1] = vS[i] + (-fBeta(i) * vI[i] * vS[i])/iN #hoeveelheid mensen die besmet kunnen raken
+        vE[i+1] = vE[i] + ( fBeta(i) * vI[i] * vS[i])/iN - dLambda * vE[i] #hoeveelheid mensen die zijn besmet maar nog niet ziek
+        vI[i+1] = vI[i] + dLambda * vE[i] - dP * dGammaHard * vI[i] - (1-dP) * dGammaMild * vI[i] #hoeveelheid zieke mensen
+        
+        vdI[i+1] = dLambda * vE[i] #dagelijkse nieuwe hoeveelheid geinfecteerde mensen
+        vHos[i+1] = dP * vdI[i+1] #percentage van alle covid gevallen die in het ziekenhuis zijn beland
+             
+    vHos[0] = 0
+    
+    #Subtract start of model
+    vHosAlter = vHos[11:iDays]
+    
+    return vHosAlter    
 ###########################################################
 ### start main
 if __name__ == "__main__":
